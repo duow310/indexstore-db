@@ -1,4 +1,5 @@
 import Foundation
+import ISDBTibs
 
 package let cleanScratchDirectories =
   (ProcessInfo.processInfo.environment["INDEXSTORE_DB_KEEP_TEST_SCRATCH_DIR"] == nil)

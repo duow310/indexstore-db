@@ -96,7 +96,7 @@ let package = Package(
 
     .testTarget(
       name: "IndexStoreDBTests",
-      dependencies: ["IndexStoreDB", "ISDBTestSupport"],
+      dependencies: ["IndexStoreDB", "ISDBTestSupport", "ISDBTibs"],
       linkerSettings: [.linkedLibrary("execinfo", .when(platforms: [.custom("freebsd")]))]
     ),
 
