@@ -162,6 +162,11 @@ public final class IndexStoreDB {
   }
 
   /// Import the units for the given output paths into indexstore-db. Returns after the import has finished.
+  ///
+  /// A unit is identified by a hash of the output path that the compiler recorded for it, so each output path must be
+  /// spelled the way the compiler spelled it: absolute, using native path separators, and in canonical form if the
+  /// index store was written with a path prefix remapping. Output paths that don't identify a unit in the index store
+  /// are silently ignored.
   public func processUnitsForOutputPathsAndWait(_ outputPaths: some Collection<String>) {
     let cOutputPaths: [UnsafePointer<CChar>] = outputPaths.map { UnsafePointer($0.withCString(strdup)!) }
     defer { for cOutputPath in cOutputPaths { free(UnsafeMutablePointer(mutating: cOutputPath)) } }

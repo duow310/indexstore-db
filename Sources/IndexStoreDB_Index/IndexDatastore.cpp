@@ -754,9 +754,9 @@ void StoreUnitRepo::purgeStaleData() {
 void StoreUnitRepo::processUnitsForOutputPathsAndWait(ArrayRef<StringRef> outputPaths) {
   // Technically, we don't know if the unit has been added or modified, but we handle `Modified` and `Added` the same
   // way anyway, so using `Modified` here should be fine.
-  SmallString<128> nameBuf;
   std::vector<UnitEventInfo> events;
   for (StringRef outputPath : outputPaths) {
+    SmallString<128> nameBuf;
     IdxStore->getUnitNameFromOutputPath(outputPath, nameBuf);
     // The caller explicitly requests processing of these output paths because it knows their units were just
     // re-generated. Pass `ignoreModTime` so that we re-import them even if the unit's modification time happens to

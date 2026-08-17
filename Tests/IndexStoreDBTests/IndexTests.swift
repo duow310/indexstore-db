@@ -11,6 +11,7 @@
 //===----------------------------------------------------------------------===//
 
 import ISDBTestSupport
+import ISDBTibs
 import IndexStoreDB
 import XCTest
 
@@ -394,6 +395,72 @@ final class IndexTests: XCTestCase {
       ]
     )
     #endif
+  }
+
+  /// All units passed to a single `processUnitsForOutputPathsAndWait` call are imported, not just some of them.
+  func testProcessUnitsForOutputPathsAndWait() throws {
+    guard let ws = try staticTibsTestWorkspace(name: "proj1") else { return }
+    try ws.builder.build()
+    let index = ws.index
+
+    let asym = Symbol(usr: "s:4main1ayyF", name: "a()", kind: .function, language: .swift)
+    let bsym = Symbol(usr: "s:4main1byyF", name: "b()", kind: .function, language: .swift)
+    let csym = Symbol(usr: "s:4main1cyyF", name: "c()", kind: .function, language: .swift)
+    let definitions = [(asym, "a:def"), (bsym, "b:def"), (csym, "c")]
+
+    // The index does not listen to unit events, so nothing is imported until we explicitly process the output paths.
+    for (symbol, _) in definitions {
+      XCTAssertEqual(0, index.occurrences(ofUSR: symbol.usr, roles: .definition).count)
+    }
+
+    // One output path per source file of the project, all processed in a single batch. The unit's output path is
+    // recorded relative to the compiler's working directory, which has its symlinks resolved, so the units can only be
+    // looked up by their resolved output paths.
+    let outputPaths = try ws.builder.indexOutputPaths.map { try $0.realpath.filePath }
+    XCTAssertEqual(3, outputPaths.count)
+    index.processUnitsForOutputPathsAndWait(outputPaths)
+
+    // The symbols of every unit of the batch are queryable right after the call returns.
+    for (symbol, locationName) in definitions {
+      let occurrences = index.occurrences(ofUSR: symbol.usr, roles: .definition)
+      let location = ws.testLoc(locationName)
+      XCTAssertEqual(1, occurrences.count, "expected a single definition of '\(symbol.name)'")
+      XCTAssertEqual(location.url.path, occurrences.first?.location.path)
+      XCTAssertEqual(location.line, occurrences.first?.location.line)
+      XCTAssertEqual(location.utf8Column, occurrences.first?.location.utf8Column)
+    }
+  }
+
+  /// Re-processing a batch of output paths picks up the changes of every unit in the batch.
+  func testProcessUnitsForOutputPathsAndWaitAfterEdit() throws {
+    guard let ws = try mutableTibsTestWorkspace(name: "proj1") else { return }
+    try ws.buildAndIndex()
+
+    let editedFiles = [ws.testLoc("a:def").url, ws.testLoc("b:def").url]
+    try ws.edit(rebuild: false) { editor, files in
+      for (i, url) in editedFiles.enumerated() {
+        let new = try files.get(url).appending("\nfunc added\(i)() {}")
+        editor.write(new, to: url)
+      }
+    }
+    try ws.builder.build()
+
+    // The units of the edited files are stale in the index until they are processed.
+    for i in editedFiles.indices {
+      XCTAssertEqual(0, ws.index.canonicalOccurrences(ofName: "added\(i)()").count)
+    }
+
+    // The unit's output path is recorded relative to the compiler's working directory, which has its symlinks resolved,
+    // so the units can only be looked up by their resolved output paths.
+    let outputPaths = try ws.builder.indexOutputPaths.map { try $0.realpath.filePath }
+    ws.index.processUnitsForOutputPathsAndWait(outputPaths)
+
+    // The changes of every unit of the batch are queryable right after the call returns.
+    for (i, url) in editedFiles.enumerated() {
+      let occurrences = ws.index.canonicalOccurrences(ofName: "added\(i)()")
+      XCTAssertEqual(1, occurrences.count, "expected a definition of 'added\(i)()' in \(url.path)")
+      XCTAssertEqual(url.path, occurrences.first?.location.path)
+    }
   }
 
   func testSwiftModules() throws {

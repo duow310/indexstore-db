@@ -285,6 +285,11 @@ INDEXSTOREDB_PUBLIC void
 indexstoredb_index_poll_for_unit_changes_and_wait(_Nonnull indexstoredb_index_t index, bool isInitialScan);
 
 /// Import the units for the given output paths into indexstore-db. Returns after the import has finished.
+///
+/// A unit is identified by a hash of the output path that the compiler recorded for it, so each output path must be
+/// spelled the way the compiler spelled it: absolute, using native path separators, and in canonical form if the index
+/// store was written with a path prefix remapping. Output paths that don't identify a unit in the index store are
+/// silently ignored.
 INDEXSTOREDB_PUBLIC void
 indexstoredb_index_process_units_for_output_paths_and_wait(_Nonnull indexstoredb_index_t index,
                                                            const char *_Nonnull const *_Nonnull outputPaths,
