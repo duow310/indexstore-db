@@ -32,7 +32,7 @@ struct DescriptionTests {
           Dependencies:
           Unit \| system \| Swift \| .*[\/]Swift.swiftmodule[\/].*swiftinterface
           Unit \| system \| _SwiftConcurrencyShims \| .*[\/]_SwiftConcurrencyShims-.*.pcm
-          Unit \| system \| (Swift|_Concurrency) \| .*[\/]_Concurrency.swiftmodule[\/].*.swiftinterface
+          Unit \| system \| _Concurrency \| .*[\/]_Concurrency.swiftmodule[\/].*.swiftinterface
           Record \| user \| .*[\/]test.swift \| test.swift-.*
           """#
         ).wholeMatch(in: description) != nil,
