@@ -53,3 +53,4 @@ well. For more, see the [Code of Conduct](https://swift.org/code-of-conduct/).
 ## Development
 
 For more information about developing IndexStoreDB, see [Development](Documentation/Development.md).
+
